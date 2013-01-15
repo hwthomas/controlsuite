@@ -14,18 +14,18 @@ for tuning and optimising their performance.
 
 These are as follows:
 
-	* CSChart: an interactive chart/plotting library
+	* CSPlot:  an interactive chart/plotting library
 	* CSTools: a function block configuration editor/simulator
 	* CSTune:  an open-loop time/frequency domain tuner
 
-All tools are written in C#, and use the cross-platform Xwt Widgets
-so that they may be run on linux, Mac and Windows system.
+All tools are written in C#, and use the Xwt cross-platform UI toolkit
+so that they may be run on linux, Mac and Windows systems.
 
 
-CSChart
-=======
+CSPlot
+======
 
-This charting package provides facilities for displaying time and
+This plotting package provides facilities for displaying time and
 frequency domain plots in a number of formats.
 
 
