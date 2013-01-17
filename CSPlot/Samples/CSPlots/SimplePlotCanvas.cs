@@ -38,17 +38,26 @@ namespace Samples
 		}
 	}
 
-	
+    /// <summary>
+    /// PlotCanvas extends Canvas by maintaining an off-screen drawing area to which
+    /// plots and axes are drawn, and from which the on-screen display is refreshed.
+    /// </summary>	
 	class PlotCanvas: Canvas
 	{
-		Rectangle rect = new Rectangle (30, 30, 100, 30);
+
+        Rectangle bounds;
+
+        double cursorX = 0;
+        double cursorY = 0;
+        bool cursorVisible = false;
+
+        ImageBuilder plotCache;
+        Image plotImage;
+        Context cacheContext;
+
 
 		public PlotCanvas ()
 		{
-
-            var box = new HBox ();
-			box.PackStart (new Button ("Button"));
-			AddChild (box, new Rectangle (30, 70, 100, 30));
 
         }
 		
@@ -58,14 +67,116 @@ namespace Samples
             if (Bounds.IsEmpty)
 				return;
 
-			ctx.Rectangle (0, 0, Bounds.Width, Bounds.Height);
-			Gradient g = new LinearGradient (0, 0, Bounds.Width, Bounds.Height);
-			g.AddColorStop (0, new Color (1, 0, 0));
-			g.AddColorStop (1, new Color (0, 1, 0));
-			ctx.Pattern = g;
-			ctx.Fill ();
+            // Copy plotCache to on-screen display
+            ctx.DrawImage (plotImage, dirtyRect);
+
+            // draw some overlay over this
+            DrawFocus (ctx, cursorX, cursorY);
 			
 		}
+
+        void DrawFocus ( Context ctx, double x, double y )
+        {
+            if (!cursorVisible)
+                return;
+
+            double r = 16;
+
+            ctx.Save ();
+
+            x += 0.5;
+            y += 0.5;
+ 
+            ctx.SetLineWidth (3);
+            ctx.SetColor (new Color (0, 0, 0, 0.5));
+            ctx.Arc (x, y, r, 0, 360);
+            ctx.Stroke ();
+
+            ctx.SetLineWidth (1);
+
+            ctx.MoveTo (x+r, y);
+            ctx.RelLineTo (r, 0);
+            ctx.MoveTo (x-r, y);
+            ctx.RelLineTo (-r, 0);
+
+            ctx.MoveTo (x, y+r);
+            ctx.RelLineTo (0, r);
+            ctx.MoveTo (x, y-r);
+            ctx.RelLineTo (0, -r);
+            ctx.Stroke ();
+
+            r += 10;
+            ctx.Arc (x, y, r, 10, 80);
+            ctx.Stroke ();
+            ctx.Arc (x, y, r, 100, 170);
+            ctx.Stroke ();
+            ctx.Arc (x, y, r, 190, 260);
+            ctx.Stroke ();
+            ctx.Arc (x, y, r, 280, 350);
+            ctx.Stroke ();
+
+ 
+            ctx.Restore ();
+        }
+
+
+        protected override void OnMouseMoved (MouseMovedEventArgs e)
+        {
+            cursorX = e.X;
+            cursorY = e.Y;
+
+            base.OnMouseMoved (e);
+
+            QueueDraw ();
+        }
+
+
+        protected override void OnMouseEntered (EventArgs e)
+        {
+            cursorVisible = true;
+            base.OnMouseEntered (e);
+        }
+
+
+        protected override void OnMouseExited (EventArgs e)
+        {
+            cursorVisible = false;
+            base.OnMouseExited (e);
+        }
+
+
+        protected override void OnBoundsChanged ()
+        {
+            bounds = this.Bounds;
+
+            if (plotCache != null ) {
+                plotCache.Dispose ();
+            }
+            plotCache = new ImageBuilder ((int)bounds.Width, (int)bounds.Height, ImageFormat.ARGB32);
+            cacheContext = plotCache.Context;
+            UpdateCache (cacheContext);
+            plotImage = plotCache.ToImage ();
+
+            base.OnBoundsChanged ();
+        }
+
+
+        void UpdateCache (Context ctx )
+        {
+            // Draw 2 rectangles to represent plot cache contents
+            // these are then copied to screen by OnDraw
+            double x = bounds.Width/2 - 50 + 0.5;
+            double y = bounds.Height/2 - 50 + 0.5;
+
+            ctx.Save ();
+            ctx.SetColor (Colors.Blue);
+            ctx.SetLineWidth (3);
+            ctx.Rectangle (x, y, 100, 100);
+            ctx.Rectangle (x+10, y+10, 80, 80);
+            ctx.Stroke ();
+            ctx.Restore ();
+        }
+   
 	}
 }
 
